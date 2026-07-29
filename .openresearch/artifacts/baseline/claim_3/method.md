@@ -7,3 +7,4 @@ covariance and must fail.
 
 Command: `uv run --frozen python -m reproduction.run`
 
+Run image: `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`

@@ -38,6 +38,7 @@ def main() -> int:
     print("fixed_command=uv run --frozen python -m reproduction.run", flush=True)
     print("selected_backend=hf", flush=True)
     print("selected_flavor=cpu-upgrade", flush=True)
+    print("selected_image=ghcr.io/astral-sh/uv:python3.12-bookworm-slim", flush=True)
     print("estimated_required_cores=1", flush=True)
     print("estimate_reason=verification is single-threaded; remote chosen because install/runtime was uncertain", flush=True)
 
@@ -52,6 +53,7 @@ def main() -> int:
         "runtime_seconds": runtime_seconds,
         "selected_backend": "hf",
         "selected_flavor": "cpu-upgrade",
+        "selected_image": "ghcr.io/astral-sh/uv:python3.12-bookworm-slim",
         "estimated_required_cores": 1,
     }
     summary = {
@@ -73,4 +75,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

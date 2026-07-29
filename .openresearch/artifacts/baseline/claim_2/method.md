@@ -7,3 +7,4 @@ quadratic completion term from `z_mn`; it must exceed the failure threshold.
 
 Command: `uv run --frozen python -m reproduction.run`
 
+Run image: `ghcr.io/astral-sh/uv:python3.12-bookworm-slim`
