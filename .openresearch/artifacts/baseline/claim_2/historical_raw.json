@@ -1,0 +1,9 @@
+{
+  "provenance": "Exact judged Space revision 3c31d94f29e79228a5d3ea9c9e1ea575ebb70e32",
+  "status": "VERIFIED",
+  "closed_form_z": 73.298,
+  "brute_force_grid_z": 73.298,
+  "relative_error": 2.47e-11,
+  "note": "Historical accepted result; the baseline run will produce a fresh fail-closed result in its orx log."
+}
+

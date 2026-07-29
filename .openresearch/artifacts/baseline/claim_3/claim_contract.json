@@ -1,0 +1,13 @@
+{
+  "claim": 3,
+  "source_anchor": "arXiv:2410.02628v5 Proposition 3.2; HTML #S3.Thmproposition2",
+  "statement": "The energy-induced conditional is exactly a finite Gaussian mixture with means a_n + A_n b_m(x), covariances epsilon A_n, and normalized z_mn weights.",
+  "acceptance": {
+    "pointwise_identity_relative_error_lt": 5e-13,
+    "independent_normalized_quadrature_relative_error_lt": 0.00002,
+    "negative_control_relative_error_gt": 0.01
+  },
+  "verdict_domain": ["VERIFIED", "FALSIFIED", "BLOCKED"],
+  "seed": 20261101
+}
+

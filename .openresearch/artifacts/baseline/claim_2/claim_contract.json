@@ -1,0 +1,12 @@
+{
+  "claim": 2,
+  "source_anchor": "arXiv:2410.02628v5 Proposition 3.1; HTML #S3.Thmproposition1",
+  "statement": "For the paper's finite log-sum-exp cost and Gaussian-mixture potential with positive weights and positive-definite A_n, Z_theta(x) equals the double sum of z_mn(x).",
+  "acceptance": {
+    "independent_midpoint_quadrature_relative_error_lt": 0.00002,
+    "negative_control_relative_error_gt": 0.001
+  },
+  "verdict_domain": ["VERIFIED", "FALSIFIED", "BLOCKED"],
+  "seed": 20261031
+}
+
