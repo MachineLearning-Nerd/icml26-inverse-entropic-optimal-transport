@@ -1,0 +1,19 @@
+{
+  "claim": 6,
+  "paper": "arXiv:2410.02628v5",
+  "source_anchors": ["Section 5.1", "Figure 2", "Appendix C.2", "Appendix D.1", "Appendix D.2"],
+  "task": {"P_paired": 128, "Q_unpaired_x": 1024, "R_unpaired_y": 1024},
+  "route": "released-standard-baselines",
+  "methods": ["ours", "Regression", "UGAN+l2", "CGAN"],
+  "training": {"ours_steps": 25000, "baseline_steps": 250000, "seeds": [20261211, 20261212, 20261213]},
+  "primary_metric": "mean conditional sliced W2 across the three paper probe points",
+  "secondary_metrics": ["conditional energy distance", "marginal sliced W2"],
+  "uncertainty": "sample standard deviations and paired t 95% intervals across three matched seeds",
+  "operational_acceptance": {
+    "all_runs_finite": true,
+    "all_expected_runs_present": true,
+    "metric_identical_control_lt": 1e-12,
+    "metric_shift_control_sliced_w2_gt": 4.0,
+    "regression_prediction_covariance_trace_lt": 1e-10
+  }
+}

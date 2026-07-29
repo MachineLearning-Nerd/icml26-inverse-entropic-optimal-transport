@@ -277,6 +277,191 @@ def _evaluate_model(
     }
 
 
+def _manual_conditional_log_prob(
+    model: EbieotGmm,
+    batched_x: torch.Tensor,
+    batched_y: torch.Tensor,
+    *,
+    normalize_weights: bool = True,
+) -> torch.Tensor:
+    """Clean-room Eq. 17 evaluator from exposed trained tensors."""
+    log_w_n = model.log_w_n()
+    a_n = model.a_n()
+    A_n = model.A_n()
+    b_m = model.cost.b_m(batched_x)
+    log_v_m = model.cost.log_v_m(batched_x)
+    log_z_nm = model.log_Z_nm(log_w_n, a_n, A_n, log_v_m, b_m)
+    component_logits = log_z_nm.flatten(start_dim=1)
+    if normalize_weights:
+        component_logits = component_logits - torch.logsumexp(
+            component_logits, dim=1, keepdim=True
+        )
+    component_means = (
+        a_n[None, :, None, :] + A_n[None, :, None, :] * b_m[:, None, :, :]
+    ).reshape(batched_x.shape[0], -1, model.y_dim)
+    component_variances = (
+        model.epsilon * A_n[None, :, None, :]
+    ).expand(
+        batched_x.shape[0],
+        model.n_potentials,
+        model.cost.m_potentials,
+        model.y_dim,
+    ).reshape(batched_x.shape[0], -1, model.y_dim)
+    centered = batched_y[:, None, :] - component_means
+    component_log_density = -0.5 * (
+        model.y_dim * math.log(2.0 * math.pi)
+        + torch.log(component_variances).sum(dim=2)
+        + (centered.square() / component_variances).sum(dim=2)
+    )
+    return torch.logsumexp(
+        component_logits + component_log_density, dim=1
+    )
+
+
+@torch.no_grad()
+def _practical_benchmark(
+    model: EbieotGmm,
+    evaluation: dict[str, Any],
+    seed: int,
+) -> dict[str, Any]:
+    """Full N*M trained-task checks for the practical parameterization."""
+    torch.manual_seed(seed)
+    model.eval()
+    probe_x = torch.cat(
+        [
+            probe[None, :].repeat(target.shape[0], 1)
+            for probe, target in zip(
+                evaluation["probes"], evaluation["conditional_targets"]
+            )
+        ],
+        dim=0,
+    )
+    probe_y = torch.cat(evaluation["conditional_targets"], dim=0)
+    checker_x = probe_x[::24][:64]
+    checker_y = probe_y[::24][:64]
+
+    distribution = model.get_conditional_distribution(
+        checker_x, model.log_w_n(), model.a_n(), model.A_n()
+    )
+    library_log_prob = distribution.log_prob(checker_y)
+    manual_log_prob = _manual_conditional_log_prob(
+        model, checker_x, checker_y
+    )
+    parity_error = float(
+        torch.max(torch.abs(library_log_prob - manual_log_prob))
+    )
+    unnormalized_log_prob = _manual_conditional_log_prob(
+        model, checker_x, checker_y, normalize_weights=False
+    )
+    unnormalized_error = float(
+        torch.max(torch.abs(unnormalized_log_prob - library_log_prob))
+    )
+
+    likelihood_times: list[float] = []
+    heldout_nll = 0.0
+    for _ in range(5):
+        started = time.perf_counter()
+        heldout_distribution = model.get_conditional_distribution(
+            probe_x, model.log_w_n(), model.a_n(), model.A_n()
+        )
+        heldout_nll = float(-heldout_distribution.log_prob(probe_y).mean())
+        likelihood_times.append(time.perf_counter() - started)
+
+    sample_count = 8_192
+    sample_x = evaluation["probes"][2][None, :]
+    sample_distribution = model.get_conditional_distribution(
+        sample_x, model.log_w_n(), model.a_n(), model.A_n()
+    )
+    sampling_times: list[float] = []
+    samples = torch.empty(0, model.y_dim, dtype=torch.float64)
+    for repeat in range(5):
+        torch.manual_seed(seed + repeat)
+        started = time.perf_counter()
+        samples = sample_distribution.sample((sample_count,)).squeeze(1)
+        sampling_times.append(time.perf_counter() - started)
+
+    weights = sample_distribution.mixture_distribution.probs.squeeze(0)
+    means = sample_distribution.component_distribution.base_dist.loc.squeeze(0)
+    variances = (
+        sample_distribution.component_distribution.base_dist.scale.squeeze(0)
+        .square()
+    )
+    exact_mean = (weights[:, None] * means).sum(dim=0)
+    centered_means = means - exact_mean
+    exact_covariance = torch.diag(
+        (weights[:, None] * variances).sum(dim=0)
+    ) + torch.einsum(
+        "k,ki,kj->ij", weights, centered_means, centered_means
+    )
+    empirical_mean = samples.mean(dim=0)
+    centered_samples = samples - empirical_mean
+    empirical_covariance = (
+        centered_samples.T @ centered_samples / (sample_count - 1)
+    )
+    mean_standard_errors = torch.sqrt(
+        torch.diag(exact_covariance) / sample_count
+    )
+    mean_z_max = float(
+        torch.max(
+            torch.abs(empirical_mean - exact_mean)
+            / torch.clamp(mean_standard_errors, min=1.0e-15)
+        )
+    )
+    covariance_relative_error = float(
+        torch.linalg.norm(empirical_covariance - exact_covariance)
+        / torch.clamp(torch.linalg.norm(exact_covariance), min=1.0e-15)
+    )
+    collapsed_covariance_relative_error = float(
+        torch.linalg.norm(exact_covariance)
+        / torch.clamp(torch.linalg.norm(exact_covariance), min=1.0e-15)
+    )
+
+    likelihood_median = sorted(likelihood_times)[len(likelihood_times) // 2]
+    sampling_median = sorted(sampling_times)[len(sampling_times) // 2]
+    passed = (
+        parity_error < 2.0e-10
+        and unnormalized_error > 1.0e-4
+        and math.isfinite(heldout_nll)
+        and mean_z_max < 6.0
+        and covariance_relative_error < 0.15
+        and collapsed_covariance_relative_error > 0.5
+    )
+    return {
+        "status": "VERIFIED" if passed else "BLOCKED",
+        "passed": passed,
+        "trained_components": (
+            model.n_potentials * model.cost.m_potentials
+        ),
+        "heldout_probe_observations": int(probe_y.shape[0]),
+        "heldout_conditional_nll": heldout_nll,
+        "independent_manual_log_prob_max_abs_error": parity_error,
+        "manual_parity_threshold": 2.0e-10,
+        "negative_control": "omit conditional mixture normalization",
+        "negative_control_max_abs_error": unnormalized_error,
+        "negative_control_failure_floor": 1.0e-4,
+        "likelihood_median_seconds": likelihood_median,
+        "likelihood_observations_per_second": (
+            probe_y.shape[0] / likelihood_median
+        ),
+        "sampling_count": sample_count,
+        "sampling_median_seconds": sampling_median,
+        "samples_per_second": sample_count / sampling_median,
+        "sampling_mean_max_z_score": mean_z_max,
+        "sampling_mean_z_threshold": 6.0,
+        "sampling_covariance_relative_error": covariance_relative_error,
+        "sampling_covariance_threshold": 0.15,
+        "collapsed_sampler_covariance_relative_error": (
+            collapsed_covariance_relative_error
+        ),
+        "collapsed_sampler_failure_floor": 0.5,
+        "timing_repetitions": 5,
+        "timing_note": (
+            "Wall-clock CPU throughput on one trained paper-scale model; "
+            "not an asymptotic complexity claim"
+        ),
+    }
+
+
 def _train_worker(payload: dict[str, Any]) -> dict[str, Any]:
     os.environ["OMP_NUM_THREADS"] = str(WORKER_THREADS)
     os.environ["MKL_NUM_THREADS"] = str(WORKER_THREADS)
@@ -378,6 +563,11 @@ def _train_worker(payload: dict[str, Any]) -> dict[str, Any]:
         evaluation_seed=seed + 400,
         include_samples=bool(payload["include_samples"]),
     )
+    practical = (
+        _practical_benchmark(model, evaluation, seed + 500)
+        if bool(payload.get("include_practical_benchmark", False))
+        else None
+    )
     finite_trace = all(
         math.isfinite(float(value))
         for row in training_trace
@@ -409,6 +599,7 @@ def _train_worker(payload: dict[str, Any]) -> dict[str, Any]:
             ],
         },
         "trained": trained,
+        "practical_parameterization": practical,
         "finite": finite_trace
         and all(math.isfinite(value) for value in metrics_to_check),
         "runtime_seconds": time.perf_counter() - started,
@@ -458,6 +649,10 @@ def run_swiss_calibration() -> dict[str, Any]:
                     "data": data_by_seed[seed],
                     "evaluation": evaluation,
                     "include_samples": (
+                        seed == TRAIN_SEEDS[0]
+                        and regime == "full-semisupervised"
+                    ),
+                    "include_practical_benchmark": (
                         seed == TRAIN_SEEDS[0]
                         and regime == "full-semisupervised"
                     ),
@@ -526,6 +721,11 @@ def run_swiss_calibration() -> dict[str, Any]:
     )
     passed = (
         all(row["finite"] for row in results)
+        and all(
+            row["practical_parameterization"] is None
+            or row["practical_parameterization"]["passed"]
+            for row in results
+        )
         and checker["control_failed_as_intended"]
         and plan_audit_passed
         and len(full_results) == len(TRAIN_SEEDS)

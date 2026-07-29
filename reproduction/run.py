@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 from reproduction.claim_1 import verify_claim_1
+from reproduction.swiss_baselines import run_swiss_baselines
 from reproduction.swiss_calibration import run_swiss_calibration
 from reproduction.verifiers import verify_claim_2, verify_claim_3
 
@@ -41,15 +42,35 @@ def main() -> int:
     print("selected_backend=hf", flush=True)
     print("selected_flavor=cpu-upgrade", flush=True)
     print("selected_image=ghcr.io/astral-sh/uv:python3.12-bookworm-slim", flush=True)
-    print("estimated_required_cores=48", flush=True)
-    print("estimate_reason=six concurrent exact-iteration Swiss-Roll fits at eight PyTorch threads each", flush=True)
+    print("estimated_required_cores=54", flush=True)
+    print(
+        "estimate_reason=max of nine baseline fits x six threads and "
+        "six EBiEOT fits x eight threads",
+        flush=True,
+    )
 
-    results = [
-        verify_claim_1(),
-        verify_claim_2(),
-        verify_claim_3(),
-        run_swiss_calibration(),
-    ]
+    claim_1 = verify_claim_1()
+    claim_2 = verify_claim_2()
+    claim_3 = verify_claim_3()
+    swiss_calibration = run_swiss_calibration()
+    practical = next(
+        row["practical_parameterization"]
+        for row in swiss_calibration["runs"]
+        if row["practical_parameterization"] is not None
+    )
+    claim_4 = {
+        "claim": 4,
+        "verdict": practical["status"],
+        "source_anchors": [
+            "Section 3.3 Eq. 15",
+            "Section 3.3 Eq. 16",
+            "Proposition 3.1",
+            "Proposition 3.2 Eq. 17",
+        ],
+        **practical,
+    }
+    claim_6 = run_swiss_baselines(swiss_calibration)
+    results = [claim_1, claim_2, claim_3, claim_4, claim_6]
     runtime_seconds = time.perf_counter() - started
     provenance = {
         "git_sha": _git_sha(),
@@ -61,13 +82,17 @@ def main() -> int:
         "selected_backend": "hf",
         "selected_flavor": "cpu-upgrade",
         "selected_image": "ghcr.io/astral-sh/uv:python3.12-bookworm-slim",
-        "estimated_required_cores": 48,
+        "estimated_required_cores": 54,
     }
     summary = {
-        "suite": "appendix-c2-swiss-roll-architecture-calibration",
+        "suite": "swiss-roll-baselines-and-practical-likelihood",
         "paper": "arXiv:2410.02628v5",
-        "all_passed": all(result["passed"] for result in results),
+        "all_passed": (
+            swiss_calibration["passed"]
+            and all(result["passed"] for result in results)
+        ),
         "claims": results,
+        "swiss_calibration": swiss_calibration,
         "provenance": provenance,
     }
     print("=== MACHINE_READABLE_RESULT ===", flush=True)
@@ -77,7 +102,8 @@ def main() -> int:
         print("FAIL: at least one verifier or negative control did not meet its contract", flush=True)
         return 1
     print(
-        "PASS: Appendix-C.2 Swiss calibration completed and Claims 1-3 remain verified",
+        "PASS: Swiss baselines and practical parameterization completed; "
+        "Claims 1-3 remain verified",
         flush=True,
     )
     return 0

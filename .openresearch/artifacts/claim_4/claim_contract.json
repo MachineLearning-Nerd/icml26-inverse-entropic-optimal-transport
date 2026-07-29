@@ -1,0 +1,22 @@
+{
+  "claim": 4,
+  "paper": "arXiv:2410.02628v5",
+  "source_anchors": [
+    "Section 3.3 Eq. 15",
+    "Section 3.3 Eq. 16",
+    "Proposition 3.1",
+    "Proposition 3.2 Eq. 17"
+  ],
+  "task": "Gaussian-to-Swiss-Roll, P=128, Q=R=1024",
+  "trained_scale": {"N": 50, "M": 25, "components_per_x": 1250},
+  "acceptance": {
+    "manual_log_density_max_abs_error_lt": 2e-10,
+    "omitted_normalizer_error_gt": 1e-4,
+    "sample_mean_max_z_lt": 6.0,
+    "sample_covariance_relative_error_lt": 0.15,
+    "collapsed_sampler_covariance_error_gt": 0.5,
+    "all_likelihoods_and_timings_finite": true
+  },
+  "timing_repetitions": 5,
+  "seed": 20261711
+}
