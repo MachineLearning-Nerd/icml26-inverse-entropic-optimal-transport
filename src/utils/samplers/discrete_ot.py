@@ -128,7 +128,7 @@ class OTPlanSampler:
             raise ValueError(f"Unkown cost function: {self.cost_function}!")
         if self.normalize_cost:
             M = M / M.max()  # should not be normalized when using minibatches
-        p = self.ot_fn(a, b, M)
+        p = self.ot_fn(a, b, M, **self.kwargs)
         p = torch.as_tensor(p, dtype=torch.float64, device=M.device)
         p = torch.clamp(p, min=0.0)
         if not torch.isfinite(p).all():
