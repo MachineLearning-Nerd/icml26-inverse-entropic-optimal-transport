@@ -57,7 +57,33 @@ def _ot_sampler() -> OTPlanSampler:
         reg=0.05,
         cost_function="rotation-v2",
         normalize_cost=False,
+        numItermax=20_000,
+        stopThr=1.0e-10,
+        warn=False,
     )
+
+
+def _plan_with_audit(
+    x_batch: torch.Tensor,
+    y_batch: torch.Tensor,
+    plan_sampler: OTPlanSampler,
+) -> tuple[torch.Tensor, float]:
+    plan = plan_sampler.get_map(x_batch, y_batch)
+    expected_x = torch.full(
+        (x_batch.shape[0],),
+        1.0 / x_batch.shape[0],
+        dtype=torch.float64,
+    )
+    expected_y = torch.full(
+        (y_batch.shape[0],),
+        1.0 / y_batch.shape[0],
+        dtype=torch.float64,
+    )
+    residual = max(
+        float(torch.max(torch.abs(plan.sum(dim=1) - expected_x))),
+        float(torch.max(torch.abs(plan.sum(dim=0) - expected_y))),
+    )
+    return plan, residual
 
 
 def _sample_one_plan_pair(
@@ -65,8 +91,8 @@ def _sample_one_plan_pair(
     y_batch: torch.Tensor,
     plan_sampler: OTPlanSampler,
     generator: torch.Generator,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    plan = plan_sampler.get_map(x_batch, y_batch)
+) -> tuple[torch.Tensor, torch.Tensor, float]:
+    plan, residual = _plan_with_audit(x_batch, y_batch, plan_sampler)
     probabilities = torch.clamp(plan.flatten(), min=0.0)
     probabilities = probabilities / probabilities.sum()
     flat_index = int(
@@ -76,7 +102,7 @@ def _sample_one_plan_pair(
     )
     x_index = flat_index // y_batch.shape[0]
     y_index = flat_index % y_batch.shape[0]
-    return x_batch[x_index], y_batch[y_index]
+    return x_batch[x_index], y_batch[y_index], residual
 
 
 def _make_training_data(seed: int) -> dict[str, torch.Tensor]:
@@ -84,19 +110,25 @@ def _make_training_data(seed: int) -> dict[str, torch.Tensor]:
     plan_sampler = _ot_sampler()
     paired_x: list[torch.Tensor] = []
     paired_y: list[torch.Tensor] = []
+    plan_residuals: list[float] = []
     for _ in range(P_PAIRED):
         x_batch = _normal(generator, PAIRING_MINIBATCH_SIZE)
         y_batch = _swiss(generator, PAIRING_MINIBATCH_SIZE)
-        x_value, y_value = _sample_one_plan_pair(
+        x_value, y_value, residual = _sample_one_plan_pair(
             x_batch, y_batch, plan_sampler, generator
         )
         paired_x.append(x_value)
         paired_y.append(y_value)
+        plan_residuals.append(residual)
     return {
         "paired_x": torch.stack(paired_x),
         "paired_y": torch.stack(paired_y),
         "unpaired_x": _normal(generator, Q_UNPAIRED),
         "unpaired_y": _swiss(generator, R_UNPAIRED),
+        "pairing_audit": {
+            "plans": len(plan_residuals),
+            "max_marginal_residual": max(plan_residuals),
+        },
     }
 
 
@@ -105,6 +137,7 @@ def _make_evaluation_data() -> dict[str, Any]:
     plan_sampler = _ot_sampler()
     probes = torch.tensor(PROBE_POINTS, dtype=torch.float64)
     conditional_targets: list[torch.Tensor] = []
+    plan_residuals: list[float] = []
     for probe in probes:
         values: list[torch.Tensor] = []
         for _ in range(CONDITIONAL_EVAL_SAMPLES):
@@ -112,14 +145,21 @@ def _make_evaluation_data() -> dict[str, Any]:
                 [probe[None, :], _normal(generator, PAIRING_MINIBATCH_SIZE - 1)]
             )
             y_batch = _swiss(generator, PAIRING_MINIBATCH_SIZE)
-            plan = plan_sampler.get_map(x_batch, y_batch)
+            plan, residual = _plan_with_audit(
+                x_batch, y_batch, plan_sampler
+            )
             values.append(y_batch[int(torch.argmax(plan[0]).item())])
+            plan_residuals.append(residual)
         conditional_targets.append(torch.stack(values))
     return {
         "probes": probes,
         "conditional_targets": conditional_targets,
         "marginal_x": _normal(generator, MARGINAL_EVAL_SAMPLES),
         "marginal_y": _swiss(generator, MARGINAL_EVAL_SAMPLES),
+        "pairing_audit": {
+            "plans": len(plan_residuals),
+            "max_marginal_residual": max(plan_residuals),
+        },
     }
 
 
@@ -468,9 +508,26 @@ def run_swiss_calibration() -> dict[str, Any]:
             no_extra_results, ("trained", "marginal", "sliced_w2")
         ),
     }
+    training_plan_count = sum(
+        int(data["pairing_audit"]["plans"]) for data in data_by_seed.values()
+    )
+    max_training_plan_residual = max(
+        float(data["pairing_audit"]["max_marginal_residual"])
+        for data in data_by_seed.values()
+    )
+    evaluation_plan_count = int(evaluation["pairing_audit"]["plans"])
+    max_evaluation_plan_residual = float(
+        evaluation["pairing_audit"]["max_marginal_residual"]
+    )
+    plan_residual_threshold = 1.0e-7
+    plan_audit_passed = (
+        max_training_plan_residual < plan_residual_threshold
+        and max_evaluation_plan_residual < plan_residual_threshold
+    )
     passed = (
         all(row["finite"] for row in results)
         and checker["control_failed_as_intended"]
+        and plan_audit_passed
         and len(full_results) == len(TRAIN_SEEDS)
         and len(no_extra_results) == len(TRAIN_SEEDS)
     )
@@ -505,6 +562,18 @@ def run_swiss_calibration() -> dict[str, Any]:
             "ground_truth": "Appendix D.1 minibatch-64 Sinkhorn argmax conditional procedure",
         },
         "metric_checker": checker,
+        "transport_plan_audit": {
+            "solver": "POT sinkhorn_log",
+            "regularization": 0.05,
+            "max_iterations": 20_000,
+            "solver_stop_threshold": 1.0e-10,
+            "acceptance_marginal_residual_lt": plan_residual_threshold,
+            "training_plans": training_plan_count,
+            "max_training_marginal_residual": max_training_plan_residual,
+            "evaluation_plans": evaluation_plan_count,
+            "max_evaluation_marginal_residual": max_evaluation_plan_residual,
+            "passed": plan_audit_passed,
+        },
         "aggregate": aggregate_results,
         "runs": results,
         "runtime_seconds": time.perf_counter() - started,
