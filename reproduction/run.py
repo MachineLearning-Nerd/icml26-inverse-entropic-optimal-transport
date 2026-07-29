@@ -10,6 +10,7 @@ import sys
 import time
 from pathlib import Path
 
+from reproduction.claim_1 import verify_claim_1
 from reproduction.verifiers import verify_claim_2, verify_claim_3
 
 
@@ -39,10 +40,10 @@ def main() -> int:
     print("selected_backend=hf", flush=True)
     print("selected_flavor=cpu-upgrade", flush=True)
     print("selected_image=ghcr.io/astral-sh/uv:python3.12-bookworm-slim", flush=True)
-    print("estimated_required_cores=1", flush=True)
-    print("estimate_reason=verification is single-threaded; remote chosen because install/runtime was uncertain", flush=True)
+    print("estimated_required_cores=2", flush=True)
+    print("estimate_reason=full-setting PyTorch gradients and Sinkhorn pairing may use more than one CPU core", flush=True)
 
-    results = [verify_claim_2(), verify_claim_3()]
+    results = [verify_claim_1(), verify_claim_2(), verify_claim_3()]
     runtime_seconds = time.perf_counter() - started
     provenance = {
         "git_sha": _git_sha(),
@@ -54,10 +55,10 @@ def main() -> int:
         "selected_backend": "hf",
         "selected_flavor": "cpu-upgrade",
         "selected_image": "ghcr.io/astral-sh/uv:python3.12-bookworm-slim",
-        "estimated_required_cores": 1,
+        "estimated_required_cores": 2,
     }
     summary = {
-        "suite": "frozen-judged-state-baseline",
+        "suite": "exact-loss-and-inverse-eot-equivalence",
         "paper": "arXiv:2410.02628v5",
         "all_passed": all(result["passed"] for result in results),
         "claims": results,
@@ -69,7 +70,7 @@ def main() -> int:
     if not summary["all_passed"]:
         print("FAIL: at least one verifier or negative control did not meet its contract", flush=True)
         return 1
-    print("PASS: judge-accepted Claims 2 and 3 remain verified", flush=True)
+    print("PASS: Claim 1 and judge-accepted Claims 2 and 3 are verified", flush=True)
     return 0
 
 

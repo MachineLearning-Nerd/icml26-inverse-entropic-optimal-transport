@@ -1,0 +1,18 @@
+{
+  "claim": 1,
+  "source_anchors": [
+    "arXiv:2410.02628v5 Section 3.1 Eq. 13",
+    "arXiv:2410.02628v5 Section 3.2 Eq. 14"
+  ],
+  "statement": "The likelihood-derived loss integrates the paired joint term and both marginal terms, and equals the inverse entropic-OT objective divided by epsilon when f^c(x) = -epsilon log Z(x).",
+  "acceptance": {
+    "symbolic_residual": "0",
+    "direct_conditional_parity_absolute_error_lt": 2e-12,
+    "each_data_term_gradient_norm_gt": 1e-8,
+    "wrong_sign_control_absolute_error_gt": 0.01
+  },
+  "full_setting": {"P": 128, "Q": 1024, "R": 1024, "N": 50, "M": 25},
+  "seed": 20261102,
+  "verdict_domain": ["VERIFIED", "FALSIFIED", "BLOCKED"]
+}
+

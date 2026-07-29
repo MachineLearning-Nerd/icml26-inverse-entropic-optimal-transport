@@ -1,0 +1,11 @@
+{
+  "run_id": "ae3c8b1c-0ad4-4f9b-9ba7-62bd489591fa",
+  "git_sha": "41e78e57d3d78f7376556fab01e1c26df54d3b93",
+  "verdict": "VERIFIED",
+  "closed_form_z": 62.77927028629934,
+  "independent_midpoint_quadrature_z": 62.77927005843745,
+  "relative_error": 3.629572123374941e-9,
+  "negative_control_relative_error": 0.910504536299579,
+  "control_failed_as_intended": true
+}
+

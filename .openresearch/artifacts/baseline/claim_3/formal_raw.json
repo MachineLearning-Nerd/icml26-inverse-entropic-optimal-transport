@@ -1,0 +1,10 @@
+{
+  "run_id": "ae3c8b1c-0ad4-4f9b-9ba7-62bd489591fa",
+  "git_sha": "41e78e57d3d78f7376556fab01e1c26df54d3b93",
+  "verdict": "VERIFIED",
+  "max_pointwise_identity_relative_error": 8.132654106654488e-16,
+  "normalized_relative_error": 4.5360387810885324e-13,
+  "negative_control_relative_error_range": [0.22070487508457762, 0.44417371323114846],
+  "control_failed_as_intended": true
+}
+
