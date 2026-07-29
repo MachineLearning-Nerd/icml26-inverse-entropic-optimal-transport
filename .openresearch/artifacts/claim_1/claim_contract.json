@@ -9,10 +9,11 @@
     "symbolic_residual": "0",
     "direct_conditional_parity_absolute_error_lt": 2e-12,
     "each_data_term_gradient_norm_gt": 1e-8,
-    "wrong_sign_control_absolute_error_gt": 0.01
+    "wrong_sign_control_matches_exact_residual_absolute_error_lt": 2e-12,
+    "wrong_sign_control_exact_residual_magnitude_gt": 1e-8,
+    "wrong_sign_to_correct_error_ratio_gt": 1e6
   },
   "full_setting": {"P": 128, "Q": 1024, "R": 1024, "N": 50, "M": 25},
   "seed": 20261102,
   "verdict_domain": ["VERIFIED", "FALSIFIED", "BLOCKED"]
 }
-

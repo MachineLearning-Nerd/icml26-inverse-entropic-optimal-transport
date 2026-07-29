@@ -147,19 +147,39 @@ def verify_claim_1() -> dict:
         squared_difference += float(((combined - paired) ** 2).sum())
     removed_marginals_gradient_difference = math.sqrt(squared_difference)
 
-    wrong_decomposition = paired_term + paired_f_c.mean() / epsilon_value - paired_f.mean() / epsilon_value
-    wrong_sign_absolute_error = float(torch.abs(direct_nll - wrong_decomposition))
+    wrong_decomposition = (
+        paired_term
+        + paired_f_c.mean() / epsilon_value
+        - paired_f.mean() / epsilon_value
+    )
+    wrong_sign_absolute_error = float(
+        torch.abs(direct_nll.detach() - wrong_decomposition.detach())
+    )
+    expected_wrong_sign_residual = float(
+        torch.abs(2.0 * paired_f_c.detach().mean() / epsilon_value)
+    )
+    wrong_sign_residual_error = abs(
+        wrong_sign_absolute_error - expected_wrong_sign_residual
+    )
 
     parity_threshold = 2.0e-12
     gradient_threshold = 1.0e-8
-    negative_threshold = 1.0e-2
+    negative_residual_threshold = 2.0e-12
+    negative_magnitude_floor = 1.0e-8
+    negative_separation_threshold = 1.0e6
+    wrong_sign_separation_ratio = wrong_sign_absolute_error / max(
+        parity_absolute_error, torch.finfo(torch.float64).eps
+    )
     full_scale_passed = (
         parity_absolute_error < parity_threshold
         and all(value > gradient_threshold for value in gradient_norms.values())
         and removed_marginals_gradient_difference > gradient_threshold
     )
     controls_failed_as_intended = (
-        symbolic_negative_failed and wrong_sign_absolute_error > negative_threshold
+        symbolic_negative_failed
+        and expected_wrong_sign_residual > negative_magnitude_floor
+        and wrong_sign_residual_error < negative_residual_threshold
+        and wrong_sign_separation_ratio > negative_separation_threshold
     )
     passed = symbolic_passed and full_scale_passed and controls_failed_as_intended
     return {
@@ -182,8 +202,12 @@ def verify_claim_1() -> dict:
         "removed_marginals_gradient_difference": removed_marginals_gradient_difference,
         "gradient_threshold": gradient_threshold,
         "wrong_sign_absolute_error": wrong_sign_absolute_error,
-        "negative_control_failure_threshold": negative_threshold,
+        "expected_wrong_sign_residual": expected_wrong_sign_residual,
+        "wrong_sign_residual_error": wrong_sign_residual_error,
+        "wrong_sign_residual_threshold": negative_residual_threshold,
+        "wrong_sign_magnitude_floor": negative_magnitude_floor,
+        "wrong_sign_separation_ratio": wrong_sign_separation_ratio,
+        "wrong_sign_separation_threshold": negative_separation_threshold,
         "controls_failed_as_intended": controls_failed_as_intended,
         "passed": passed,
     }
-
