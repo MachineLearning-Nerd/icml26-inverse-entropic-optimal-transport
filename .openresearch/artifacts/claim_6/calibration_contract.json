@@ -1,0 +1,16 @@
+{
+  "purpose": "select the defensible Swiss-Roll architecture before baseline comparison",
+  "paper": "arXiv:2410.02628v5",
+  "source_anchors": ["Section 5.1", "Figure 2", "Appendix C.2", "Appendix D.1"],
+  "variants": ["appendix-c2-mlp", "released-linear"],
+  "primary_selection_metric": "three-seed mean conditional sliced W2",
+  "secondary_selection_metric": "three-seed mean marginal sliced W2",
+  "directions": 64,
+  "seeds": [20261211, 20261212, 20261213],
+  "acceptance": {
+    "all_25000_step_runs_finite": true,
+    "metric_identical_control_lt": 1e-12,
+    "metric_shifted_sliced_w2_gt": 4.0,
+    "metric_shifted_energy_distance_gt": 8.0
+  }
+}
