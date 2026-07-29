@@ -23,3 +23,7 @@ audited; the run is rejected if any maximum row/column marginal residual is
 This is an architecture-selection round, not the final Claim 6 verdict.
 Baseline comparisons occur only after the stronger source-faithful candidate
 is promoted.
+
+This sibling selects the released `gmm_swiss_roll.yaml` interpretation:
+both cost/potential towers are linear. Its paper-scale data, solver, seeds,
+steps, metrics, and controls are identical to the Appendix-MLP sibling.

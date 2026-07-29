@@ -64,7 +64,7 @@ def main() -> int:
         "estimated_required_cores": 48,
     }
     summary = {
-        "suite": "appendix-c2-swiss-roll-architecture-calibration",
+        "suite": "released-linear-swiss-roll-architecture-calibration",
         "paper": "arXiv:2410.02628v5",
         "all_passed": all(result["passed"] for result in results),
         "claims": results,
@@ -77,7 +77,7 @@ def main() -> int:
         print("FAIL: at least one verifier or negative control did not meet its contract", flush=True)
         return 1
     print(
-        "PASS: Appendix-C.2 Swiss calibration completed and Claims 1-3 remain verified",
+        "PASS: released-linear Swiss calibration completed and Claims 1-3 remain verified",
         flush=True,
     )
     return 0

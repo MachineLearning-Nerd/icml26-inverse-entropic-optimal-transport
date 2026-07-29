@@ -30,7 +30,7 @@ PROBE_POINTS = ((-2.0, 0.0), (2.0, 2.0), (0.0, 0.0))
 CONDITIONAL_EVAL_SAMPLES = 512
 MARGINAL_EVAL_SAMPLES = 1024
 WORKER_THREADS = 8
-ARCHITECTURE = "appendix-c2-mlp"
+ARCHITECTURE = "released-linear"
 
 
 def _normal(
@@ -531,6 +531,29 @@ def run_swiss_calibration() -> dict[str, Any]:
         and len(full_results) == len(TRAIN_SEEDS)
         and len(no_extra_results) == len(TRAIN_SEEDS)
     )
+    if ARCHITECTURE == "appendix-c2-mlp":
+        architecture_metadata = {
+            "log_v_m_hidden_channels": [128],
+            "b_m_hidden_channels": [256, 256],
+            "interpretation": (
+                "Appendix C.2 single-hidden-layer v_m and "
+                "two-hidden-layer a_m"
+            ),
+            "source_conflict": (
+                "Released gmm_swiss_roll.yaml overrides both towers to linear"
+            ),
+        }
+    else:
+        architecture_metadata = {
+            "log_v_m_hidden_channels": [],
+            "b_m_hidden_channels": [],
+            "interpretation": (
+                "Released gmm_swiss_roll.yaml linear-tower overrides"
+            ),
+            "source_conflict": (
+                "Appendix C.2 prose describes hidden layers for both towers"
+            ),
+        }
     return {
         "calibration": "swiss-roll-architecture",
         "status": "CALIBRATED" if passed else "BLOCKED",
@@ -549,10 +572,7 @@ def run_swiss_calibration() -> dict[str, Any]:
         },
         "architecture": {
             "name": ARCHITECTURE,
-            "log_v_m_hidden_channels": [128],
-            "b_m_hidden_channels": [256, 256],
-            "interpretation": "Appendix C.2 single-hidden-layer v_m and two-hidden-layer a_m",
-            "released_config_deviation": "Released gmm_swiss_roll.yaml overrides both towers to linear",
+            **architecture_metadata,
         },
         "evaluation": {
             "probe_points": [list(point) for point in PROBE_POINTS],
