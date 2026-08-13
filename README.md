@@ -2,7 +2,7 @@
 
 Independent reproduction audit for [“Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization”](https://arxiv.org/abs/2410.02628).
 
-The planned public repository name is [`icml26-inverse-entropic-optimal-transport`](https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport). The current checkout still uses the pre-audit repository slug until the GitHub rename is applied.
+The repository is published as [`icml26-inverse-entropic-optimal-transport`](https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport).
 
 ## What the paper does
 
