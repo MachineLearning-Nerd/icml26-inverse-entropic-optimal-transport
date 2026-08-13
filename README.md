@@ -1,281 +1,128 @@
-<div align="center">
+# Inverse Entropic Optimal Transport for Semi-supervised Learning
 
-# Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization
+Independent reproduction audit for [“Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization”](https://arxiv.org/abs/2410.02628).
 
-[Mikhail Persiianov](https://scholar.google.com/citations?user=YXX3VMQAAAAJ&hl=en),
-[Arip Asadulaev](https://scholar.google.com/citations?user=wcdrgdYAAAAJ&hl=en),
-[Nikita Andreev](https://scholar.google.com/citations?user=D0a1XNsAAAAJ&hl=en),
-[Nikita Starodubcev](https://scholar.google.com/citations?user=o6pRm_gAAAAJ&hl=en),
-[Dmitry Baranchuk](https://scholar.google.com/citations?user=NiPmk8oAAAAJ&hl=en),
-[Anastasis Kratsios](https://scholar.google.com/citations?user=9D-bHFgAAAAJ&hl=en),
-[Evgeny Burnaev](https://scholar.google.com/citations?user=pCRdcOwAAAAJ&hl=en),
-[Alexander Korotin](https://scholar.google.com/citations?user=1rIIvjAAAAAJ&hl=en)
+The planned public repository name is [`icml26-inverse-entropic-optimal-transport`](https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport). The current checkout still uses the pre-audit repository slug until the GitHub rename is applied.
 
-[![arXiv Paper](https://img.shields.io/badge/arXiv-2410.02628-b31b1b)](https://arxiv.org/abs/2410.02628)
-[![OpenReview Paper](https://img.shields.io/badge/OpenReview-PDF-8c1b13)](https://openreview.net/forum?id=0p617sK4Z4)
-[![GitHub](https://img.shields.io/github/stars/MuXauJl11110/EBiEOT?style=social)](https://github.com/MuXauJl11110/EBiEOT)
-![GitHub License](https://img.shields.io/github/license/MuXauJl11110/EBiEOT?style=flat&label=License)
+## What the paper does
 
-</div>
+The paper introduces Energy-Based Inverse Entropic Optimal Transport (EBiEOT) for semi-supervised learning. Its objective combines three data streams—paired `(x, y)` observations, unpaired `x` observations, and unpaired `y` observations—through a likelihood objective rather than a separately estimated transport map or an ad-hoc consistency regularizer.
 
-This repository contains the official implementation of the paper *"Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization"*. The framework utilizes Energy-Based Inverse Entropic Optimal Transport (**EBiEOT**) to handle semi-supervised learning setups by directly maximizing data likelihood.
+The paper develops two practical families:
 
----
+- **EBiEOT-GMM**, which uses Gaussian-mixture structure to obtain tractable costs, potentials, normalizers, and conditional distributions.
+- **EBiEOT-NN**, which parameterizes the energy/cost with neural networks and uses sampling-based training.
 
-## 📌 TL;DR
+The theoretical sections establish closed-form identities for finite Gaussian mixtures and a universal-approximation route. The experiments study synthetic Swiss Roll data and a real weather-forecasting benchmark.
 
-This work bridges **Inverse Entropic Optimal Transport (IEOT)** and **Semi-supervised Learning (SSL)**. By formulating SSL as an optimization problem over the data likelihood, our proposed methods (**EBiEOT-GMM** and **EBiEOT-NN**) parameterize cost functions and data potentials using neural networks and Gaussian Mixture Models. This approach effectively unifies paired and unpaired data streams without requiring ad-hoc regularizers or precomputed transport maps.
+## Current reproduction assessment
 
----
+The table below records what was actually checked, how the result is produced, and the current evidence boundary. “Verified” refers to this repository’s executable checks, not to an official author or venue certification.
 
-## 📦 Project Structure
+| Paper surface | How the claim is produced | Evidence in this repository | Status |
+| --- | --- | --- | --- |
+| Section 3.1–3.2, Eqs. 13–14: data likelihood equals the inverse-EOT objective | Build a symbolic certificate, compare the direct likelihood with the EBiEOT loss, check gradients for paired and both unpaired streams, and require corrected wrong-sign controls to fail | [`reproduction/claim_1.py`](reproduction/claim_1.py), [`claim_1/EVAL.md`](.openresearch/artifacts/claim_1/EVAL.md) | **VERIFIED** — accepted formal run `2cf4da04-c18a-4339-93cf-56279246e6b3` |
+| Proposition 3.1: closed-form normalizer `Zθ(x)` | Compare the finite Gaussian-mixture formula with independent midpoint quadrature under the proposition’s positive-weight/positive-definite-covariance assumptions; run a malformed-formula control | [`reproduction/verifiers.py`](reproduction/verifiers.py), [`baseline/claim_2/`](.openresearch/artifacts/baseline/claim_2/), [`baseline/source_audit.md`](.openresearch/artifacts/baseline/source_audit.md) | **VERIFIED** — baseline evidence; the artifact EVAL still records a formal-rerun-pending label |
+| Proposition 3.2: exact conditional Gaussian mixture | Compare the displayed component means/covariances pointwise and after normalization; run an independent quadrature check and covariance negative control | [`reproduction/verifiers.py`](reproduction/verifiers.py), [`baseline/claim_3/`](.openresearch/artifacts/baseline/claim_3/) | **VERIFIED** — baseline evidence; the artifact EVAL still records a formal-rerun-pending label |
+| Section 3.3, Eqs. 15–18: practical cost/dual parameterization | Audit the source anchors and compare the log-sum-exp cost and Gaussian-mixture dual forms against their finite closed-form definitions | [`reproduction/core.py`](reproduction/core.py), [`baseline/source_audit.md`](.openresearch/artifacts/baseline/source_audit.md) | **SOURCE-AUDITED** — no separate current verdict artifact |
+| Theorem 3.3 and Figure 2: Swiss Roll recovery / universality route | Use the clean-room multimodal-GMM likelihood route and the current Swiss Roll calibration/baseline suite; keep unfinished practical routes fail-closed | [`reproduction/swiss_calibration.py`](reproduction/swiss_calibration.py), [`reproduction/swiss_baselines.py`](reproduction/swiss_baselines.py), [`claim_6/EVAL.md`](.openresearch/artifacts/claim_6/EVAL.md) | **PARTIAL** — historical evidence exists; the current practical route remains pending |
+| Section 5.2, Tables 1–2: real weather benchmark | Train/evaluate the weather models with the external TabRED weather files and compare log-likelihoods against the paper’s baselines | [`claim_4/EVAL.md`](.openresearch/artifacts/claim_4/EVAL.md), [`notebooks/weather/README.md`](notebooks/weather/README.md) | **BLOCKED / DEFERRED** — the formal verifier has no verdict until the data and full training run are available |
 
-```bash
-.
-├── conf/                  # Hydra configuration files
-│   ├── baseline/          # Baselines model & training presets
-│   ├── dataset/           # synthetic/, alae/, colored_mnist/, mnist_classification/, weather/
-│   ├── ebieot/            # EBiEOT model, cost, and potential defaults
-│   └── train/             # Core training loops and optimizers
-│
-├── notebooks/             # Active Jupyter tutorials & evaluation pipelines
-│   ├── ALAE/              # High-dimensional latent space experiments (FFHQ)
-│   ├── colored_mnist/     # Image translation tasks
-│   ├── classification/    # MNIST energy classification
-│   ├── swiss_roll/        # Toy/synthetic geometry evaluations
-│   └── weather/           # TabRED weather domain translation
-│
-├── scripts/               # Execution entry points (CLI trainers & sweep automation)
-│   ├── train.py           # Main EBiEOT training (Swiss-roll, MNIST classification)
-│   ├── train_baseline.py  # Baseline training entry point
-│   ├── train_colored_mnist.py  # Colored MNIST (MLP / CNN EBiEOT-NN)
-│   └── run_*.py           # Papermill grids, Optuna, MNIST energy grid, utilities
-│
-├── src/                   # Core library source code
-│   ├── ebieot/            # EBiEOT-GMM, EBiEOT-NN, classification_based.py
-│   ├── baselines/         # Inverse-OT baseline architectures (CGAN, CNF, etc.)
-│   ├── networks/          # Building blocks (MLPs, GAN components, Normalizing Flows)
-│   └── utils/             # Categorized utility modules
-│
-├── tests/                 # pytest suite
-├── data/                  # MNIST / colored-MNIST cache (auto-download at runtime)
-├── logs/                  # Hydra training outputs
-├── checkpoints/           # Saved runs and notebook artifacts
-└── papermill-notebooks/   # Outputs from sweep scripts (created at runtime)
-
-```
-
-Figures from training and notebooks are written under `logs/` or notebook output directories, not a separate top-level `plots/` folder.
-
----
-
-## 📥 Installation & Dependencies
-
-This project manages environment dependencies with [uv](https://github.com/astral-sh/uv). **Python `>=3.10,<3.13`** is required ([pyproject.toml](pyproject.toml)). Pinned dependencies live in `pyproject.toml` and `uv.lock`; [requirements.txt](requirements.txt) only points to `uv sync`.
+The current cumulative runner exposes the exact executable route:
 
 ```bash
-# Clone the repository
-git clone https://github.com/MuXauJl11110/EBiEOT.git
-cd EBiEOT
-
-# Sync the environment and dependencies
-uv sync
+uv run --frozen python -m reproduction.run
 ```
 
-> **Working directory:** Run all commands from the **repository root** — the directory that contains `conf/`, `scripts/`, and `pyproject.toml`.
+It is intentionally fail-closed: a failed parity check, missing/non-finite result, failed negative control, or unfinished formal route prevents a passing summary. The configured hosted run estimates approximately 54 CPU cores, so this is not a lightweight smoke test.
 
-To run scripts or tests within the managed environment, prepend commands with `uv run`:
+## Repository contents
 
-```bash
-uv run python scripts/train.py --help
-
-# Tests require the dev dependency group (pytest)
-uv sync --group dev
-uv run pytest
-```
-
----
-
-## 📂 Data Prerequisites
-
-| Dataset | Setup |
+| Path | Purpose |
 | --- | --- |
-| Swiss-roll | Synthetic — no download |
-| MNIST classification | Auto-download to `data/mnist` ([mnist_classification.py](src/utils/datasets/mnist_classification.py)) |
-| Colored MNIST | torchvision download under `data/` |
-| FFHQ ALAE latents | Manual: place `latents.npy`, `gender.npy`, `age.npy` under `datasets/FFHQ/` ([conf/dataset/alae/ffhq_latents.yaml](conf/dataset/alae/ffhq_latents.yaml)) |
-| Weather (TabRED) | External files under `../tabred/kal/weather` — see [notebooks/weather/README.md](notebooks/weather/README.md) |
+| [`src/`](src/) | EBiEOT-GMM, EBiEOT-NN, costs, potentials, samplers, networks, and baselines |
+| [`conf/`](conf/) | Hydra datasets, models, training, and experiment configurations |
+| [`scripts/`](scripts/) | Training, baseline, sweep, and notebook entry points |
+| [`reproduction/`](reproduction/) | Focused claim verifiers, Swiss Roll calibration, baselines, and cumulative runner |
+| [`.openresearch/artifacts/`](.openresearch/artifacts/) | Claim contracts, source audit, evaluation notes, and machine-readable evidence metadata |
+| [`candidate_space/`](candidate_space/) | Current evidence state and reproducibility notes |
+| [`notebooks/`](notebooks/) | Swiss Roll, MNIST, colored-MNIST, ALAE, and weather experiments |
+| [`tests/`](tests/) | Project tests for the implementation |
 
-For Comet ML logging (`logger=comet`) or weather notebook training cells, set `COMET_API_KEY` (or log in via the Comet CLI) before running.
+The implementation preserved here originated from the authors’ public [EBiEOT repository](https://github.com/MuXauJl11110/EBiEOT). The reproduction layer and evidence notes are maintained independently; this repository does not replace the authors’ original publication or claim to be an official author release.
 
----
+## Running the project
 
-## 🏋️ Training & CLI Usage
-
-All experiments are powered by **Hydra**. Configuration files reside under `conf/`. All commands below assume the repository root as the current working directory.
-
-> **Experiment naming:** Hydra presets use the prefix **`egeot_`** for EBiEOT-NN and MNIST classification (historical naming) and **`gmm_`** for EBiEOT-GMM. Related Swiss-roll variants include `egeot_swiss_roll_128`, `egeot_swiss_roll_16k`, and `gmm_swiss_roll_shared`.
-
-### 1. Core EBiEOT Training (Swiss-Roll)
+The project requires Python `>=3.10,<3.13` and uses [uv](https://github.com/astral-sh/uv).
 
 ```bash
-# Train EBiEOT Neural Network on Swiss-roll
+uv sync --frozen
+uv run --frozen python -m reproduction.run
+```
+
+For implementation experiments, examples include:
+
+```bash
+# EBiEOT on synthetic Swiss Roll data
 uv run python scripts/train.py experiment=egeot_swiss_roll
 
-# Train EBiEOT GMM with Comet ML logging enabled
-uv run python scripts/train.py experiment=gmm_swiss_roll logger=comet
+# EBiEOT-GMM on Swiss Roll data
+uv run python scripts/train.py experiment=gmm_swiss_roll
 
-# Multi-run hyperparameter override example
-uv run python scripts/train.py -m experiment=egeot_swiss_roll train.optimizer.paired.lr=1e-3,5e-4
-
-# Debug run (writes logs to logs/train/runs/...)
-uv run python scripts/train.py debug=default
-```
-
-> **Note:** You can override any configuration value dynamically from the command line (e.g., `train.steps_to=500`).
-
-### 2. Inverse-OT Baselines (Swiss-Roll)
-
-Baseline architectures are located under `src/baselines/` and configured via `conf/baseline/`.
-
-```bash
-# Train Conditional GAN baseline
+# Conditional GAN baseline
 uv run python scripts/train_baseline.py experiment=baseline_cgan_swiss_roll_16k
-
-# Train Semi-supervised Continuous Normalizing Flow baseline with Comet
-uv run python scripts/train_baseline.py experiment=baseline_cnf_swiss_roll_semi logger=comet
-
-# Fast debug smoke-test for baselines
-uv run python scripts/train_baseline.py experiment=baseline_reg_swiss_roll_16k train.steps_to=10 debug=default
 ```
 
-### 3. MNIST Energy Classification
+Data requirements vary by experiment:
 
-Run semi-supervised label prediction on standard MNIST:
+- Swiss Roll is generated locally.
+- MNIST and colored-MNIST are downloaded into `data/` when their experiments run.
+- ALAE experiments require externally prepared FFHQ latent files.
+- Weather experiments require the external TabRED files under `../tabred/kal/weather` and remain deferred in the current audit.
 
-```bash
-uv run python scripts/train.py experiment=egeot_classification_mnist train.epochs_max=2
-uv run python scripts/run_mnist_energy_grid.py --run-name smoke --paired-grid 20 --unpaired-grid 0 --epochs-max 2 --cpu
-```
+## Branch organization
 
-### 4. Colored MNIST
+The original branches were generated under `orx/*`. They are being renamed to describe their scientific role. The complete old-to-new map, branch purposes, and provenance rules are in [`branch-audit.md`](branch-audit.md).
 
-```bash
-uv run python scripts/train_colored_mnist.py experiment=egeot_colored_mnist train.steps_to=10
-```
-
-Other presets: `egeot_colored_mnist_cnn_vanilla`, `egeot_colored_mnist_cnn_unet`, `egeot_colored_mnist_cnn_nonlocal` (under `conf/experiment/`).
-
-### 5. Automated Batches & Optuna Sweeps
-
-Automate execution or launch hyperparameter optimization sweeps using Papermill and Optuna:
-
-```bash
-uv run python scripts/run_swiss_roll.py              # EBiEOT-GMM grid -> notebooks/swiss_roll/ebieot_gmm.ipynb
-uv run python scripts/run_neural_swiss_roll.py       # EBiEOT-NN grid  -> notebooks/swiss_roll/ebieot_nn.ipynb
-uv run python scripts/run_optuna_search_swiss_roll.py  # Hyperparameter optimization over GMM
-uv run python scripts/run_baselines_swiss_roll.py    # Comprehensive baseline sweep
-```
-
----
-
-## 📔 Active Notebooks
-
-Jupyter notebooks are located under `notebooks/`. They compose Hydra configs directly via the API.
-
-| Notebook | Role / Experiment Context |
+| Branch | Role |
 | --- | --- |
-| `swiss_roll/ebieot_nn.ipynb` | Evaluates EBiEOT-NN on standard synthetic Swiss-roll configurations. |
-| `swiss_roll/ebieot_gmm.ipynb` | Evaluates EBiEOT-GMM variants (independent vs. shared parameters). |
-| `swiss_roll/swiss_roll_plot.ipynb` | Utility to load saved Hydra checkpoints and plot data marginals. |
-| `ALAE/ebieot_gmm_alae.ipynb` | Latent-space EBiEOT-GMM applied to FFHQ human face latents. |
-| `ALAE/ebieot_gmm_alae_eval.ipynb` | Quantitative ALAE evaluation and optional comparison with FSBM models. |
-| `colored_mnist/ebieot_colored_mnist.ipynb` | Image translation tasks mapping digits across color domains. |
-| `classification/ebieot_classification_mnist.ipynb` | Energy-based classification benchmarks on MNIST. |
+| `main` | Canonical implementation, current evidence layer, README, and branch map |
+| `historical/judged-baseline` | Frozen historical judged state; retained for provenance |
+| `audit/loss-inverse-eot-equivalence` | Section 3.1–3.2 objective/loss equivalence certificate |
+| `audit/swiss-roll-benchmark` | Faithful Swiss Roll benchmark and practical GMM route |
+| `audit/swiss-roll-linear-calibration` | Released linear Swiss Roll architecture calibration |
+| `audit/swiss-roll-baselines` | Swiss Roll baseline comparison and practical likelihood suite |
+| `audit/swiss-roll-conditional-flow` | Conditional-flow Swiss Roll baselines |
+| `audit/weather-tables` | Weather Tables 1–2 benchmark route; currently deferred |
 
-**Weather (TabRED)** — EBiEOT-GMM only; EBiEOT-NN is not supported in these notebooks. See [notebooks/weather/README.md](notebooks/weather/README.md).
+Branch names describe the evidence route, not a claim that every branch has a completed result.
 
-| Notebook | Method | Hydra experiment |
-| --- | --- | --- |
-| `weather.ipynb`, `weather-ebm.ipynb` | EBiEOT-GMM | `gmm_weather` |
-| `weather-gan.ipynb` | cGAN baseline | `baseline_cgan_weather` |
-| `weather-reg.ipynb` | Regression baseline | `baseline_reg_weather` |
-| `weather-cnf.ipynb` | CNF baseline | `baseline_cnf_weather` |
-| `weather-ugan.ipynb` | UGAN baseline | `baseline_ugan_weather` |
+## Paper metadata
 
----
+- **Title:** Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization
+- **Authors:** Mikhail Persiianov, Arip Asadulaev, Nikita Andreev, Nikita Starodubcev, Dmitry Baranchuk, Anastasis Kratsios, Evgeny Burnaev, and Alexander Korotin
+- **Paper:** [arXiv:2410.02628](https://arxiv.org/abs/2410.02628) ([version 5 source audit](.openresearch/artifacts/baseline/source_audit.md))
+- **OpenReview:** [0p617sK4Z4](https://openreview.net/forum?id=0p617sK4Z4)
+- **Official implementation:** [MuXauJl11110/EBiEOT](https://github.com/MuXauJl11110/EBiEOT)
 
-## 🗺️ Library Layout & Architecture
-
-### `src/ebieot/` — Core Models
-
-* **`ebieot_gmm.py`**: Implementation of `EbieotGmm` (EBiEOT-GMM dual framework with a learnable Log-Sum-Exp cost structure).
-* **`ebieot_nn.py`**: Implementation of `EbieotNn` (EBiEOT-NN with parameterized neural costs/potentials and Langevin pseudo-sampling).
-* **`classification_based.py`**: Energy-based semi-supervised MNIST classification.
-* **`costs/`** & **`potentials/`**: Modular definitions for `MLPCost`, `MLPLSECost`, and generic multilayer perceptron potentials.
-* **`sampling/`**: Langevin dynamics stepping modules and sample experience buffers.
-
-### `src/utils/` — Canonical API Packages
-
-To ensure development reproducibility and modularity, please import utilities using the standardized paths outlined below:
-
-| Package | Purpose & Target Modules |
-| --- | --- |
-| **`core/`** | Global seed setups (`seed.py`) and rank-aware command-line utilities (`pylogger.py`). |
-| **`experiment/`** | Hydra integration decorators (`hydra_utils.py`), Rich tree logging formatting (`rich_utils.py`). |
-| **`training/`** | Optimization helpers, standard loss calculation pipelines, and streaming averages (`helpers.py`). |
-| **`evaluation/`** | MMD and Sinkhorn divergence (`metrics.py`). |
-| **`samplers/`** | Standardized training/evaluation data streaming hooks (`synthetic.py`, `data.py`, `discrete_ot.py`). |
-| **`datasets/`** | Underlying loaders handling pairing, ground truth matching, and domain-specific tokens. |
-| **`plotting/`** | Distribution visualization assets, transport pairs, and automated image grids. |
-
-💡 **Import Cheat Sheet:**
-
-```python
-from src.utils.core.seed import set_seed
-from src.utils.core.pylogger import RankedLogger
-from src.utils.experiment.hydra_utils import extras
-from src.utils.training.helpers import compute_loss, update_average, compute_metrics
-from src.utils.evaluation.metrics import compute_mmd, compute_sinkhorn_divergence
-from src.utils.samplers.synthetic import build_swiss_roll_samplers
-```
-
----
-
-## 📊 Inverse-OT Reference Baselines
-
-The table below describes the default configuration behaviors of the baseline environments used for benchmarking against the Swiss-roll target dataset.
-
-| Experiment Config YAML | Method Identifier | Default Sample Profile (`Paired X–Y` / `Unpaired X` / `Unpaired Y`) |
-| --- | --- | --- |
-| `baseline_cgan_swiss_roll_16k` | `cgan` | 16,000 / 16,000 / 0 |
-| `baseline_ugan_swiss_roll_16k` | `ugan` | 16,000 / 16,000 / 16,000 |
-| `baseline_reg_swiss_roll_16k` | `regression` | 16,000 / 0 / 1,024 |
-| `baseline_cnf_swiss_roll_small` | `cnf` | 16,000 / 0 / 1,024 |
-| `baseline_cnf_swiss_roll_semi` | `cnf_semi` | 128 / 1,024 / 1,024 *(utilizes in-memory OT optimization)* |
-
-> ⚡ **Quick CPU Smoke Test:** To quickly verify baseline execution environments without straining local resources, append the following parameter overrides to your terminal call: `train.steps_to=2 dataset.P_XY_paired=64 dataset.paired_cache.enabled=false`.
-
----
-
-## 🎓 Citation
-
-If you use this codebase or find our methodology helpful in your research, please cite our work using the following format:
+### Citation
 
 ```bibtex
-@inproceedings{
-  persiianov2026inverse,
-  title={Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization},
-  author={Mikhail Persiianov and Arip Asadulaev and Nikita Andreev and Nikita Starodubcev and Dmitry Baranchuk and Anastasis Kratsios and Evgeny Burnaev and Alexander Korotin},
-  booktitle={Forty-third International Conference on Machine Learning},
-  year={2026},
-  url={https://openreview.net/forum?id=0p617sK4Z4}
+@misc{persiianov2026inverse,
+  title         = {Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization},
+  author        = {Persiianov, Mikhail and Asadulaev, Arip and Andreev, Nikita and Starodubcev, Nikita and Baranchuk, Dmitry and Kratsios, Anastasis and Burnaev, Evgeny and Korotin, Alexander},
+  year          = {2026},
+  eprint        = {2410.02628},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note          = {arXiv:2410.02628v5}
 }
 ```
 
-## 🙏 Credits
+## Thank you to the authors
 
-- [GeomLoss](https://www.kernel-operations.io/geomloss/) - toolkit for computing metrics between measures;
-- [optuna](https://optuna.org) - toolkit for hyperparameter search;
-- [comet ML](https://www.comet.com) — experiment-tracking and visualization toolkit;
-- [inkscape](https://inkscape.org/) — an excellent open-source editor for vector graphics;
+Thank you to Mikhail Persiianov, Arip Asadulaev, Nikita Andreev, Nikita Starodubcev, Dmitry Baranchuk, Anastasis Kratsios, Evgeny Burnaev, and Alexander Korotin for developing EBiEOT, publishing the paper, and releasing the implementation that makes independent study possible. This repository is maintained as a reproducibility and documentation companion, with respect for the authors’ original work and attribution.
+
+## Maintenance attribution
+
+Repository documentation, branch naming, audit notes, and maintenance commits in this collection are attributed to **MachineLearning-Nerd**. Scientific authorship and ownership of the paper’s ideas remain with the paper authors.
