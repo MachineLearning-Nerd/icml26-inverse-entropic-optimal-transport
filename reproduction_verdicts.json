@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "paper": "0p617sK4Z4",
+  "arxiv": "2410.02628v5",
+  "source_sha256": "8139af4bd89f96a5ef4ba271997eaf1108d20bcc61c1ddee06d50d27dc9bb75f",
+  "overall_verdict": "PARTIAL_C1_C2_C3_VERIFIED_C4_SOURCE_AUDITED_C5_WEATHER_DEFERRED_C6_SWISS_ROLL_PENDING",
+  "claim_statuses": {
+    "C1": "VERIFIED_SCOPED",
+    "C2": "VERIFIED_SCOPED",
+    "C3": "VERIFIED_SCOPED",
+    "C4": "SOURCE_AUDITED",
+    "C5": "DEFERRED_EXTERNAL_DATA",
+    "C6": "PENDING_ROUTE"
+  },
+  "evidence": {
+    "c1_run_id": "2cf4da04-c18a-4339-93cf-56279246e6b3",
+    "c2_c3_run_id": "ae3c8b1c-0ad4-4f9b-9ba7-62bd489591fa",
+    "c2_relative_error": 3.629572123374941e-9,
+    "c3_max_pointwise_identity_relative_error": 8.132654106654488e-16,
+    "c3_normalized_relative_error": 4.536038781088532e-13
+  },
+  "historical_external_result": {
+    "score_recorded": false,
+    "current_score_claim": false,
+    "note": "No external judge score is recorded in the repository evidence."
+  },
+  "publication": {
+    "publication_allowed": false,
+    "author_endorsement_claimed": false
+  },
+  "boundary": "Claims 1-3 are accepted finite or symbolic checks; the practical parameterization is source-audited, Swiss Roll is pending, and weather is deferred for external data and full training."
+}

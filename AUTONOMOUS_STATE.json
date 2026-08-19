@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "paper": "Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization",
+  "arxiv": "2410.02628",
+  "submission": "0p617sK4Z4",
+  "phase": "standardized_claim_audit_publication",
+  "overall_status": "PARTIAL_C1_C2_C3_VERIFIED_C4_SOURCE_AUDITED_C5_WEATHER_DEFERRED_C6_SWISS_ROLL_PENDING_NO_CURRENT_SCORE",
+  "next_action": "Complete the practical Swiss Roll route and obtain the external TabRED weather data before changing C5 or C6 status.",
+  "current_score_claim": false,
+  "publication_allowed": false,
+  "author_endorsement_claimed": false,
+  "claim_statuses": {
+    "C1": "VERIFIED_SCOPED",
+    "C2": "VERIFIED_SCOPED",
+    "C3": "VERIFIED_SCOPED",
+    "C4": "SOURCE_AUDITED",
+    "C5": "DEFERRED_EXTERNAL_DATA",
+    "C6": "PENDING_ROUTE"
+  },
+  "source": {
+    "version": "arXiv 2410.02628v5",
+    "sha256": "8139af4bd89f96a5ef4ba271997eaf1108d20bcc61c1ddee06d50d27dc9bb75f"
+  },
+  "repository": {
+    "owner": "MachineLearning-Nerd",
+    "canonical_email": "MachineLearning-Nerd@users.noreply.github.com",
+    "github": "https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport",
+    "branches": 8,
+    "pre_publication_reachable_commits": 23,
+    "recovery_bundle_sha256": "75eead4967d5d054eb0594d42bd91a76ac55dd17d45c770657a6d10f7f4be284"
+  },
+  "historical_external_result": {
+    "score_recorded": false,
+    "current_score_claim": false,
+    "candidate_space": "DineshAI/0p617sK4Z4"
+  }
+}

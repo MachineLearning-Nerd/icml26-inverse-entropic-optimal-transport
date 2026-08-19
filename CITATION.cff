@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this audit, cite both this repository and the original paper."
+type: software
+title: "Independent audit of Inverse Entropic Optimal Transport"
+version: "1.0.0"
+date-released: 2026-08-19
+authors:
+  - name: MachineLearning-Nerd
+repository-code: "https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport"
+url: "https://github.com/MachineLearning-Nerd/icml26-inverse-entropic-optimal-transport"
+abstract: "Scoped claim-by-claim audit of the inverse entropic optimal transport likelihood identity, Gaussian-mixture formulas, practical parameterization, Swiss Roll route, and weather benchmark boundary."
+keywords:
+  - inverse optimal transport
+  - entropic optimal transport
+  - semi-supervised learning
+  - Gaussian mixture
+  - reproducibility
+preferred-citation:
+  type: article
+  title: "Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization"
+  authors:
+    - family-names: Persiianov
+      given-names: Mikhail
+    - family-names: Asadulaev
+      given-names: Arip
+    - family-names: Andreev
+      given-names: Nikita
+    - family-names: Starodubcev
+      given-names: Nikita
+    - family-names: Baranchuk
+      given-names: Dmitry
+    - family-names: Kratsios
+      given-names: Anastasis
+    - family-names: Burnaev
+      given-names: Evgeny
+    - family-names: Korotin
+      given-names: Alexander
+  year: 2026
+  url: "https://arxiv.org/abs/2410.02628"

@@ -32,6 +32,5 @@ The newer executable suite uses its own route-oriented labels: Claim 1 for the o
 - `main` is the canonical branch for the implementation plus current audit documentation.
 - Every clean branch must contain the same `README.md` and `branch-audit.md` documentation once the branch is published.
 - Historical `orx/*` names may appear in this file as old-name provenance, but should not remain in live GitHub links or branch names.
-- Maintenance commits are authored and committed as `MachineLearning-Nerd <37579156+MachineLearning-Nerd@users.noreply.github.com>`.
+- Maintenance commits are authored and committed as `MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>`.
 - A pending, historical, or deferred route must not be rewritten as a final `VERIFIED` or `FALSIFIED` result.
-

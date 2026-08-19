@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "paper": {
+    "title": "Inverse Entropic Optimal Transport Solves Semi-supervised Learning via Data Likelihood Maximization",
+    "arxiv": "2410.02628",
+    "version": "v5",
+    "submission": "0p617sK4Z4",
+    "authors": [
+      "Mikhail Persiianov",
+      "Arip Asadulaev",
+      "Nikita Andreev",
+      "Nikita Starodubcev",
+      "Dmitry Baranchuk",
+      "Anastasis Kratsios",
+      "Evgeny Burnaev",
+      "Alexander Korotin"
+    ],
+    "source_sha256": "8139af4bd89f96a5ef4ba271997eaf1108d20bcc61c1ddee06d50d27dc9bb75f"
+  },
+  "overall_status": "PARTIAL_C1_C2_C3_VERIFIED_C4_SOURCE_AUDITED_C5_WEATHER_DEFERRED_C6_SWISS_ROLL_PENDING_NO_CURRENT_SCORE",
+  "claims": [
+    {
+      "id": "C1",
+      "name": "likelihood_inverse_eot_equivalence",
+      "status": "VERIFIED_SCOPED",
+      "paper_anchor": "Sections 3.1-3.2, Eqs. 13-14",
+      "production": ["reproduction/claim_1.py", ".openresearch/artifacts/claim_1/formal_raw.json"],
+      "controls": ["corrected wrong-sign residual", "paired and both marginal gradient norms"],
+      "scope": "Symbolic and finite identity check under the displayed Gibbs-Boltzmann parameterization.",
+      "metrics": {"direct_parity_absolute_error": 1.000532989792191e-12, "wrong_sign_separation_ratio": 609952684.888593}
+    },
+    {
+      "id": "C2",
+      "name": "closed_form_normalizer",
+      "status": "VERIFIED_SCOPED",
+      "paper_anchor": "Proposition 3.1",
+      "production": ["reproduction/verifiers.py", "reproduction/independent_checker.py", ".openresearch/artifacts/baseline/claim_2/formal_raw.json"],
+      "controls": ["malformed quadratic-completion term"],
+      "scope": "Finite positive-weight, positive-definite-covariance Gaussian-mixture check.",
+      "metrics": {"relative_error": 3.629572123374941e-9, "negative_control_relative_error": 0.910504536299579}
+    },
+    {
+      "id": "C3",
+      "name": "exact_conditional_gaussian_mixture",
+      "status": "VERIFIED_SCOPED",
+      "paper_anchor": "Proposition 3.2",
+      "production": ["reproduction/verifiers.py", "reproduction/independent_checker.py", ".openresearch/artifacts/baseline/claim_3/formal_raw.json"],
+      "controls": ["wrong covariance scale"],
+      "scope": "Finite pointwise identity and normalized-density comparison under the proposition assumptions.",
+      "metrics": {"max_pointwise_identity_relative_error": 8.132654106654488e-16, "normalized_relative_error": 4.536038781088532e-13}
+    },
+    {
+      "id": "C4",
+      "name": "practical_cost_dual_parameterization",
+      "status": "SOURCE_AUDITED",
+      "paper_anchor": "Section 3.3, Eqs. 15-18",
+      "production": ["reproduction/core.py", "reproduction/swiss_calibration.py", ".openresearch/artifacts/baseline/source_audit.md"],
+      "controls": ["source-anchor audit", "finite closed-form comparison route"],
+      "scope": "The forms are mapped and executable routes exist, but no accepted current route artifact is recorded."
+    },
+    {
+      "id": "C5",
+      "name": "real_weather_benchmark",
+      "status": "DEFERRED_EXTERNAL_DATA",
+      "paper_anchor": "Section 5.2, Tables 1-2",
+      "production": ["notebooks/weather/README.md", ".openresearch/artifacts/claim_4/EVAL.md"],
+      "controls": ["fail-closed missing-data boundary"],
+      "scope": "Deferred because external TabRED weather files and full training/evaluation are unavailable."
+    },
+    {
+      "id": "C6",
+      "name": "swiss_roll_recovery_and_universality",
+      "status": "PENDING_ROUTE",
+      "paper_anchor": "Theorem 3.3, Section 5.1, Figure 2",
+      "production": ["reproduction/swiss_calibration.py", "reproduction/swiss_baselines.py", ".openresearch/artifacts/claim_6"],
+      "controls": ["finite metric controls", "identical and shifted controls", "regression covariance control"],
+      "scope": "Historical clean-room multimodal support is preserved; the current trained Swiss Roll/calibration route has no accepted final result."
+    }
+  ]
+}
